@@ -52,7 +52,6 @@ module.exports = function (grunt) {
                             proxyEntry.headers.host = proxyTarget.host + ":" + proxyTarget.port
                     }
                     delete proxyEntry.hostRewrite
-                    console.log(proxyEntry)
                 }
                 proxies.push(proxyEntry)
             })
