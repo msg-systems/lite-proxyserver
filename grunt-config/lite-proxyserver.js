@@ -1,12 +1,12 @@
 var _ = require("lodash");
+var path = require("path");
 
 module.exports = function (grunt) {
-    var modulename = "[lite-proxyserver]"
-    var configfile = "package.json"
-    var pkg        = grunt.file.readJSON(configfile)
-    var liteCfg    = pkg["lite-proxyserver"]
+    var modulename = "[lite-proxyserver]";
+    var configfile = "package.json";
+    var pkg        = grunt.file.readJSON(configfile);
+    var liteCfg    = pkg["lite-proxyserver"];
 
-    var os = require("os");
     /* connect, server, proxy and watch specific actions and tasks */
     var rest;
     // handle mock
@@ -19,13 +19,13 @@ module.exports = function (grunt) {
             grunt.fatal(modulename + " configuration failure - lite-proxyserver.mock.file is not a string");
         else {
             try {
-                rest = require(mockCfg.file)(mockctx);
+                rest = require(path.join(__dirname, mockCfg.file))(mockctx);
             } catch (e) {
                 grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
             }
         }
     }
-    grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"))
+    grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
 
     // handle proxy
     var proxyCfg = liteCfg ? liteCfg.proxy : undefined;
@@ -36,7 +36,7 @@ module.exports = function (grunt) {
         var targetHosts = proxyCfg.targetHosts;
         var proxyTarget = targetHosts[proxyCfg.target];
         var localPort   = proxyCfg.port || 2345;
-        var localHost   = (proxyCfg.https ? "https" : "http") + "://" + (proxyCfg.host || "localhost") + ":" + localPort
+        var localHost   = (proxyCfg.https ? "https" : "http") + "://" + (proxyCfg.host || "localhost") + ":" + localPort;
 
         var proxies = [];
         if (_.isArray(proxyCfg.proxies)) {
@@ -67,53 +67,58 @@ module.exports = function (grunt) {
                         protocol:   proxyCfg.https ? "https" : "http",
                         keepalive:  true,
                         middleware: function (connect, options) {
-                            var middlewares = [
-                                connect.logger({ format: "dev" }),
-                                function redirectToApp (req, res, next) {
-                                    if (req.url === "/" && proxyCfg.redirectRootToApp && typeof proxyCfg.redirectRootToApp === 'string') {
-                                        res.statusCode = 302
-                                        res.setHeader("location", proxyCfg.redirectRootToApp)
+                            var middlewares = [];
+
+                            middlewares.push(connect.logger({ format: "dev" }));
+
+                            if (proxyCfg.redirectRootToApp && typeof proxyCfg.redirectRootToApp === 'string') {
+                                middlewares.push(function redirectToApp (req, res, next) {
+                                    if (req.url === "/") {
+                                        res.statusCode = 302;
+                                        res.setHeader("location", proxyCfg.redirectRootToApp);
                                         res.end()
                                     } else {
                                         next();
                                     }
-                                },
-                                function proxyPassReverse (req, res, next) {
-                                    if (proxyCfg.proxyPassReverse !== false) {
-                                        res.oldSetHeader = res.setHeader
+                                })
+                            }
+                            if (!_.isEmpty(proxies)) {
+                                if (proxyCfg.proxyPassReverse !== false) {
+                                    middlewares.push(function proxyPassReverse (req, res, next) {
+                                        res.oldSetHeader = res.setHeader;
                                         res.setHeader    = function (name, value) {
-                                            var passReverseValue = value
+                                            var passReverseValue = value;
                                             if (name && name.toLowerCase() === "location") {
-                                                passReverseValue = passReverseValue.replace(new RegExp("http[s]?://" + proxyTarget.host + ":" + proxyTarget.port + "/"), localHost + "/")
+                                                passReverseValue = passReverseValue.replace(new RegExp("http[s]?://" + proxyTarget.host + ":" + proxyTarget.port + "/", "gi"), localHost + "/");
                                                 if (passReverseValue !== value) {
                                                     console.log("[proxyPassReverse] change redirect location", value, "->", passReverseValue)
                                                 }
                                             }
                                             res.oldSetHeader(name, passReverseValue)
+                                        };
+                                        next();
+                                    });
+                                    middlewares.push(tamper(function (req, res) {
+                                        if (proxyCfg.proxyPassReverse === false ||
+                                            (res.getHeader('Content-Type') && typeof res.getHeader('Content-Type') === "string" &&
+                                            res.getHeader('Content-Type').indexOf('text/html') === -1)) {
+                                            return
                                         }
-                                    }
-                                    next();
-                                },
-                                tamper(function (req, res) {
-                                    if (proxyCfg.proxyPassReverse === false ||
-                                        (res.getHeader('Content-Type') && typeof res.getHeader('Content-Type') === "string" &&
-                                        res.getHeader('Content-Type').indexOf('text/html') === -1)) {
-                                        return
-                                    }
-                                    return function (body) {
-                                        return body.replace(new RegExp("http[s]?://" + proxyTarget.host + ":" + proxyTarget.port + "/", "gi"), localHost + "/")
-                                    }
-                                }),
-                                proxyMiddleware,
-                                connect.static(options.base[0], { maxAge: 0, redirect: true }),
-                                connect.directory(options.base[0]),
-                                connect.bodyParser()
-                            ];
+                                        return function (body) {
+                                            return body.replace(new RegExp("http[s]?://" + proxyTarget.host + ":" + proxyTarget.port + "/", "gi"), localHost + "/")
+                                        }
+                                    }));
+                                }
+                                middlewares.push(proxyMiddleware);
+                            }
+                            middlewares.push(connect.static(options.base[0], { maxAge: 0, redirect: true }));
+                            middlewares.push(connect.directory(options.base[0]));
+                            middlewares.push(connect.bodyParser());
                             if (rest) {
                                 middlewares.push(rest.rester());
                             }
                             middlewares.push(connect.errorHandler());
-                            
+
                             return middlewares;
                         }
                     }
