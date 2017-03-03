@@ -52,7 +52,6 @@ module.exports = function (grunt) {
                             proxyEntry.headers.host = proxyTarget.host + ":" + proxyTarget.port
                     }
                     delete proxyEntry.hostRewrite
-                    console.log(proxyEntry)
                 }
                 proxies.push(proxyEntry)
             })
@@ -68,7 +67,7 @@ module.exports = function (grunt) {
                         protocol:   proxyCfg.https ? "https" : "http",
                         keepalive:  true,
                         middleware: function (connect, options) {
-                            return [
+                            var middlewares = [
                                 connect.logger({ format: "dev" }),
                                 function redirectToApp (req, res, next) {
                                     if (req.url === "/" && proxyCfg.redirectRootToApp && typeof proxyCfg.redirectRootToApp === 'string') {
@@ -108,10 +107,14 @@ module.exports = function (grunt) {
                                 proxyMiddleware,
                                 connect.static(options.base[0], { maxAge: 0, redirect: true }),
                                 connect.directory(options.base[0]),
-                                connect.bodyParser(),
-                                rest.rester(),
-                                connect.errorHandler()
+                                connect.bodyParser()
                             ];
+                            if (rest) {
+                                middlewares.push(rest.rester());
+                            }
+                            middlewares.push(connect.errorHandler());
+                            
+                            return middlewares;
                         }
                     }
                 },
