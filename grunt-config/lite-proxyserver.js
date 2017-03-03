@@ -19,7 +19,7 @@ module.exports = function (grunt) {
             grunt.fatal(modulename + " configuration failure - lite-proxyserver.mock.file is not a string");
         else {
             try {
-                rest = require(path.join(__dirname, mockCfg.file))(mockctx);
+                rest = require(path.join(process.cwd(), mockCfg.file))(mockctx);
             } catch (e) {
                 grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
             }
