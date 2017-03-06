@@ -29,8 +29,8 @@ module.exports = function (grunt) {
                         }    
                     },
                     target:                 string,
-                    port:                   number,
-                    host:                   string,
+                    port?:                  number,
+                    host?:                  string,
                     https?:                 boolean,
                     base?:                  string,
                     redirectRootToApp?:     string,

@@ -79,8 +79,8 @@ The entries in the package.json will be validated with [duckyjs](https://github.
             }    
         },
         target:                 string,
-        host:                   string,
-        port:                   number,
+        host?:                  string,
+        port?:                  number,
         https?:                 boolean,
         base?:                  string,
         redirectRootToApp?:     string,
