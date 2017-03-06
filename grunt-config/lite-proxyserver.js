@@ -1,47 +1,73 @@
-var _ = require("lodash");
-var path = require("path");
+"use strict"
+const _     = require("lodash");
+const path  = require("path");
+const Ducky = require("ducky");
 
 module.exports = function (grunt) {
-    var modulename = "[lite-proxyserver]";
-    var configfile = "package.json";
-    var pkg        = grunt.file.readJSON(configfile);
-    var liteCfg    = pkg["lite-proxyserver"];
+
+    const modulename = "[lite-proxyserver]";
+    const configfile = grunt.option('package.json') || "package.json";
+    const pkg        = grunt.file.readJSON(configfile);
+    const liteCfg    = pkg["lite-proxyserver"];
 
     /* connect, server, proxy and watch specific actions and tasks */
-    var rest;
+    let rest;
+
+    let errors = []
+    if (!Ducky.validate(liteCfg, `{
+                mock?:      {
+                    enabled?:               boolean,
+                    ctx?:                   string,
+                    file:                   string
+                },
+                proxy?:      {
+                    enabled?:               boolean,
+                    targetHosts:    {
+                        @:              {
+                            host:           string,
+                            port:           number
+                        }    
+                    },
+                    target:                 string,
+                    port:                   number,
+                    host:                   string,
+                    https?:                 boolean,
+                    base?:                  string,
+                    redirectRootToApp?:     string,
+                    proxyPassReverse?:      boolean,
+                    proxies?:               [object*]
+                }
+            }`, errors)) {
+        grunt.fatal(modulename + " configuration failures: \n" + errors.join("\n"));
+    }
+
     // handle mock
-    var mockCfg = liteCfg ? liteCfg.mock : undefined;
+    const mockCfg = liteCfg ? liteCfg.mock : undefined;
     if (mockCfg && mockCfg.enabled !== false) {
-        var mockctx = mockCfg.ctx || "/mock";
-        if (!mockCfg.file || typeof mockCfg.file !== "string")
-            grunt.fatal(modulename + " configuration failure - lite-proxyserver.mock.file is not defined in " + configfile);
-        else if (typeof mockCfg.file !== "string")
-            grunt.fatal(modulename + " configuration failure - lite-proxyserver.mock.file is not a string");
-        else {
-            try {
-                rest = require(path.join(process.cwd(), mockCfg.file))(mockctx);
-            } catch (e) {
-                grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
-            }
+        const mockctx = mockCfg.ctx || "/mock";
+        try {
+            rest = require(path.join(process.cwd(), mockCfg.file))(mockctx);
+        } catch (e) {
+            grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
         }
     }
     grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
 
     // handle proxy
-    var proxyCfg = liteCfg ? liteCfg.proxy : undefined;
+    const proxyCfg = liteCfg ? liteCfg.proxy : undefined;
     if (proxyCfg && proxyCfg.enabled !== false) {
-        var proxyMiddleware = require('grunt-connect-proxy/lib/utils').proxyRequest;
-        var tamper          = require('tamper');
+        const proxyMiddleware = require('grunt-connect-proxy/lib/utils').proxyRequest;
+        const tamper          = require('tamper');
 
-        var targetHosts = proxyCfg.targetHosts;
-        var proxyTarget = targetHosts[proxyCfg.target];
-        var localPort   = proxyCfg.port || 2345;
-        var localHost   = (proxyCfg.https ? "https" : "http") + "://" + (proxyCfg.host || "localhost") + ":" + localPort;
+        const targetHosts = proxyCfg.targetHosts;
+        const proxyTarget = targetHosts[proxyCfg.target];
+        const localPort   = proxyCfg.port || 2345;
+        const localHost   = (proxyCfg.https ? "https" : "http") + "://" + (proxyCfg.host || "localhost") + ":" + localPort;
 
-        var proxies = [];
+        const proxies = [];
         if (_.isArray(proxyCfg.proxies)) {
             _.forEach(proxyCfg.proxies, function (each) {
-                var proxyEntry  = _.cloneDeep(each);
+                const proxyEntry  = _.cloneDeep(each);
                 proxyEntry.host = proxyTarget.host;
                 proxyEntry.port = proxyTarget.port;
                 if (each.hasOwnProperty("hostRewrite")) {
@@ -67,7 +93,7 @@ module.exports = function (grunt) {
                         protocol:   proxyCfg.https ? "https" : "http",
                         keepalive:  true,
                         middleware: function (connect, options) {
-                            var middlewares = [];
+                            const middlewares = [];
 
                             middlewares.push(connect.logger({ format: "dev" }));
 
@@ -87,7 +113,7 @@ module.exports = function (grunt) {
                                     middlewares.push(function proxyPassReverse (req, res, next) {
                                         res.oldSetHeader = res.setHeader;
                                         res.setHeader    = function (name, value) {
-                                            var passReverseValue = value;
+                                            let passReverseValue = value;
                                             if (name && name.toLowerCase() === "location") {
                                                 passReverseValue = passReverseValue.replace(new RegExp("http[s]?://" + proxyTarget.host + ":" + proxyTarget.port + "/", "gi"), localHost + "/");
                                                 if (passReverseValue !== value) {

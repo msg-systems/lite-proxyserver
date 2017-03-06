@@ -1,0 +1,108 @@
+{
+    "name":        "lite-proxyserver",
+    "homepage":    "https://github.com/msg-systems/lite-proxyserver",
+    "description": "Lightweight development only node server for serving a web app, providing mockdata endpoints and proxy functionality toward real backends",
+    "version":     "0.0.3",
+    "license":     "MIT",
+    "author": {
+        "name":    "Jochen Hoertreiter",
+        "email":   "jochen.hoertreiter@googlemail.com",
+        "url":     "https://github.com/msg-systems"
+    },
+    "keywords": [
+        "proxy",
+        "spa",
+        "static",
+        "server",
+        "development",
+        "mockdata"
+    ],
+    "repository": {
+        "type": "git",
+        "url":  "https://github.com/msg-systems/lite-proxyserver.git"
+    },
+    "bugs": {
+        "url":  "https://github.com/msg-systems/lite-proxyserver/issues"
+    },
+    "dependencies": {
+        "grunt-contrib-connect": "0.7.1",
+        "grunt-connect-proxy":   "0.2.0",
+        "grunt-extend-config":   "0.9.5",
+        "tamper":                "0.1.0",
+        "connect-rest":          "1.4.2",
+        "js-mockdata-registry":  "1.0.0",
+        "lodash":                "4.17.4",
+        "ducky":                 "2.5.0"
+    },
+    "devDependencies": {
+        "upd":                  "1.1.20"
+    },
+    "peerDependencies": {
+        "grunt":                "^1.0.1"
+    },
+    "engines": {
+        "node":                 ">=0.10.0"
+    },
+    "scripts": {
+        "upd":         "upd -n"
+    },
+    "lite-proxyserver": {
+        "mock": {
+            "enabled": true,
+            "file": "./mock/rest-services.js"
+        },
+        "proxy": {
+            "enabled": true,
+            "targetHosts": {
+                "FACHTEST": { "host": "msas6174i.msg.de", "port": 12020 },
+                "NIGHTLY":  { "host": "msas6174i.msg.de", "port": 11020 },
+                "LOCAL":    { "host": "localhost", "port": 9080 },
+                "DRAGAN":  { "host": "MSGN01381.int.root.msg.ag", "port": 9080 },
+                "CSILLA":  { "host": "MSGN02493.int.root.msg.ag", "port": 9080 },
+                "ANDREIT": { "host": "MSGN02599.int.root.msg.ag", "port": 9080 },
+                "GALINA":  { "host": "MSGN02273.int.root.msg.ag", "port": 9080 },
+                "GUENTER": { "host": "MSGN01771.int.root.msg.ag", "port": 9080 },
+                "ROBERT":  { "host": "MSGN02496.int.root.msg.ag", "port": 9080 },
+                "MAREK":   { "host": "MSGN02642.int.root.msg.ag", "port": 9080 },
+                "DAN":     { "host": "MSGN02482.int.root.msg.ag", "port": 9080 }
+            },
+            "target": "NIGHTLY",
+            "port": 2345,
+            "host": "foo",
+            "https": true,
+            "base": "www",
+            "redirectRootToApp": "/rejectsAndComplaint/defectNotice/",
+            "proxyPassReverse": true,
+            "proxies": [
+                { "context": "/common/resources",                                        "hostRewrite": true },
+                { "context": "/rejectsAndComplaint/defectNotice/login",                  "hostRewrite": true },
+                { "context": "/rejectsAndComplaint/adminSupplier/login",                 "hostRewrite": true },
+                { "context": "/rejectsAndComplaint/adminSubscription/login",             "hostRewrite": true },
+                { "context": "/rejectsAndComplaint/resources",                           "hostRewrite": true },
+                { "context": "/rejectsAndComplaint/j_security_check",                    "hostRewrite": true },
+                {
+                    "context": "/rejectsAndComplaint/ibm_security_logout",
+                    "hostRewrite": false,
+                    "headers": {
+                        "accept-encoding": ""
+                    }
+                },
+                {
+                    "context": "/weblogin",
+                    "hostRewrite": true,
+                    "headers": {
+                        "accept-encoding": ""
+                    }
+                },
+                {
+                    "context": "/SQMS",
+                    "hostRewrite": true,
+                    "headers": {
+                        "accept-encoding": ""
+                    }
+                }
+            ]
+        }
+    }
+
+}
