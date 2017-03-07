@@ -5,6 +5,10 @@ const Ducky = require("ducky");
 
 module.exports = function (grunt) {
 
+    grunt.loadNpmTasks('grunt-contrib-connect')
+    grunt.loadNpmTasks('grunt-connect-proxy')
+    grunt.loadNpmTasks('grunt-extend-config')
+
     const modulename = "[lite-proxyserver]";
     const configfile = grunt.option('package.json') || "package.json";
     const pkg        = grunt.file.readJSON(configfile);
@@ -157,6 +161,6 @@ module.exports = function (grunt) {
         grunt.verbose.writeln(modulename + " proxy disabled")
     }
 
-    grunt.registerTask("proxyServer", ["configureProxies", "connect:httpServer"]);
+    grunt.registerTask("lite-proxyserver", ["configureProxies", "connect:httpServer"]);
 
 }

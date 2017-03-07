@@ -53,7 +53,7 @@ Inside your projects Gruntfile.js you can integrate the lite-proxyserver by this
 
 ```js
 module.exports = function (grunt) {
-    grunt.loadTasks("node_modules/lite-proxyserver")
+    grunt.loadNpmTasks("lite-proxyserver")
 };
 ```
   

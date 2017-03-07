@@ -8,9 +8,5 @@ var path = require("path");
 
 module.exports = function (grunt) {
 
-    grunt.loadNpmTasks('grunt-contrib-connect')
-    grunt.loadNpmTasks('grunt-connect-proxy')
-    grunt.loadNpmTasks('grunt-extend-config')
-
-    grunt.loadTasks(path.join(__dirname, "grunt-config"))
+    grunt.loadTasks(path.join(__dirname, "tasks"))
 };
