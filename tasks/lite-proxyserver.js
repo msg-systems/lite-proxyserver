@@ -7,6 +7,7 @@ module.exports = function (grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-connect')
     grunt.loadNpmTasks('grunt-connect-proxy')
+    grunt.loadNpmTasks('grunt-exec')
     grunt.loadNpmTasks('grunt-extend-config')
 
     const modulename = "[lite-proxyserver]";
@@ -47,10 +48,12 @@ module.exports = function (grunt) {
 
     // handle mock
     const mockCfg = liteCfg ? liteCfg.mock : undefined;
+    let mockFile;
     if (mockCfg && mockCfg.enabled !== false) {
         const mockctx = mockCfg.ctx || "/mock";
+        mockFile = path.join(process.cwd(), mockCfg.file)
         try {
-            rest = require(path.join(process.cwd(), mockCfg.file))(mockctx);
+            rest = require(mockFile)(mockctx);
         } catch (e) {
             grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
         }
@@ -88,6 +91,20 @@ module.exports = function (grunt) {
         }
 
         grunt.extendConfig({
+            exec: {
+                httpServer: {
+                    cmd: function() {
+                        let watch = ""
+                        if (mockFile) {
+                            watch = `./node_modules/nodemon/bin/nodemon --watch ${path.dirname(mockFile)}`
+                        }
+                        return `node ${watch} ./node_modules/grunt/bin/grunt connect:httpServer`
+                    },
+                    options: {
+                        stdio: 'inherit'
+                    }
+                }
+            },
             connect: {
                 httpServer: {
                     options: {
@@ -161,6 +178,6 @@ module.exports = function (grunt) {
         grunt.verbose.writeln(modulename + " proxy disabled")
     }
 
-    grunt.registerTask("lite-proxyserver", ["configureProxies", "connect:httpServer"]);
+    grunt.registerTask("lite-proxyserver", ["configureProxies", "exec:httpServer"]);
 
 }
