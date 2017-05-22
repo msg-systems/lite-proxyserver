@@ -98,7 +98,7 @@ module.exports = function (grunt) {
                         if (mockFile) {
                             watch = `./node_modules/nodemon/bin/nodemon --watch ${path.dirname(mockFile)}`
                         }
-                        return `node ${watch} ./node_modules/grunt/bin/grunt connect:httpServer`
+                        return `node ${watch} ./node_modules/grunt/bin/grunt exec-lite-proxyserver`
                     },
                     options: {
                         stdio: 'inherit'
@@ -178,6 +178,7 @@ module.exports = function (grunt) {
         grunt.verbose.writeln(modulename + " proxy disabled")
     }
 
-    grunt.registerTask("lite-proxyserver", ["configureProxies", "exec:httpServer"]);
+    grunt.registerTask("exec-lite-proxyserver", ["configureProxies", "exec:httpServer"]);
+    grunt.registerTask("lite-proxyserver", ["exec-lite-proxyserver"]);
 
 }
