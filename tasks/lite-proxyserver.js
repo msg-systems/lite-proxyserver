@@ -16,15 +16,16 @@ module.exports = function (grunt) {
     const liteCfg    = pkg["lite-proxyserver"];
 
     /* connect, server, proxy and watch specific actions and tasks */
-    let rest;
+    let rests = [];
 
     let errors = []
     if (!Ducky.validate(liteCfg, `{
-                mock?:      {
+                mock?:      [{
                     enabled?:               boolean,
                     ctx?:                   string,
+                    fallback?:              string,
                     file:                   string
-                },
+                }*],
                 proxy?:      {
                     enabled?:               boolean,
                     targetHosts:    {
@@ -47,18 +48,23 @@ module.exports = function (grunt) {
     }
 
     // handle mock
-    const mockCfg = liteCfg ? liteCfg.mock : undefined;
-    let mockFile;
-    if (mockCfg && mockCfg.enabled !== false) {
-        const mockctx = mockCfg.ctx || "/mock";
-        mockFile = path.join(process.cwd(), mockCfg.file)
-        try {
-            rest = require(mockFile)(mockctx);
-        } catch (e) {
-            grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
+    const mockCfgs = liteCfg ? liteCfg.mock : undefined;
+    let mockFiles = [];
+    let rest;
+    _.forEach(mockCfgs, function(mockCfg) {
+        if (mockCfg && mockCfg.enabled !== false) {
+            const mockctx  = mockCfg.ctx || "/mock";
+            const mockFile = path.join(process.cwd(), mockCfg.file)
+            mockFiles.push(mockFile)
+            try {
+                rest = require(mockFile)(mockctx)
+                rests.push({rest: rest, ctx: mockctx, file: mockFile, fallback: mockCfg.fallback});
+            } catch (e) {
+                grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
+            }
         }
-    }
-    grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
+        grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
+    })
 
     // handle proxy
     const proxyCfg = liteCfg ? liteCfg.proxy : undefined;
@@ -94,9 +100,13 @@ module.exports = function (grunt) {
             exec: {
                 httpServer: {
                     cmd: function() {
-                        let watch = ""
-                        if (mockFile) {
-                            watch = `./node_modules/nodemon/bin/nodemon --watch ${path.dirname(mockFile)}`
+                        let watch = `./node_modules/nodemon/bin/nodemon --watch ${configfile}`
+                        if (mockFiles && mockFiles.length) {
+                            watch += _.chain(mockFiles)
+                                .map(function(mockFile) { return ` --watch ${path.dirname(mockFile)}` })
+                                .uniq()
+                                .value()
+                                .join("")
                         }
                         return `node ${watch} ./node_modules/grunt/bin/grunt configureProxies connect:httpServer`
                     },
@@ -161,9 +171,33 @@ module.exports = function (grunt) {
                             middlewares.push(connect.static(options.base[0], { maxAge: 0, redirect: true }));
                             middlewares.push(connect.directory(options.base[0]));
                             middlewares.push(connect.bodyParser());
-                            if (rest) {
-                                middlewares.push(rest.rester());
+                            if (rests && rests.length) {
+                                _.forEach(rests, function(restObj) {
+                                    middlewares.push(restObj.rest.rester());
+                                    grunt.log.writeln("Mock created for: " + restObj.ctx + " to " + restObj.file);
+                                    if (restObj.fallback) {
+                                        grunt.log.writeln(" is fallback for: " + restObj.fallback)
+                                    }
+                                })
                             }
+                            middlewares.push(function mockFallbackHandler (req, res, next) {
+                                let fallbackRest = _.chain(rests)
+                                    .filter(function(rest) {
+                                        return rest.fallback && req.url.startsWith(rest.fallback) && !req.url.startsWith(rest.ctx)
+                                    })
+                                    .first()
+                                    .value()
+
+                                if (fallbackRest) {
+                                    res.statusCode = 302;
+                                    const redirectTarget = req.url.replace(fallbackRest.fallback, fallbackRest.ctx);
+                                    res.setHeader("location", redirectTarget);
+                                    grunt.log.writeln("Fallback mock handler: redirecting to " + redirectTarget)
+                                    res.end()
+                                } else {
+                                    next()
+                                }
+                            });
                             middlewares.push(connect.errorHandler());
 
                             return middlewares;
