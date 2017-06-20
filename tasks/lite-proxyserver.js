@@ -20,12 +20,17 @@ module.exports = function (grunt) {
 
     let errors = []
     if (!Ducky.validate(liteCfg, `{
-                mock?:      [{
+                mock?:      ([{
                     enabled?:               boolean,
                     ctx?:                   string,
                     fallback?:              string,
                     file:                   string
-                }*],
+                }*] | {
+                    enabled?:               boolean,
+                    ctx?:                   string,
+                    fallback?:              string,
+                    file:                   string
+                }),
                 proxy?:      {
                     enabled?:               boolean,
                     targetHosts:    {
@@ -48,9 +53,12 @@ module.exports = function (grunt) {
     }
 
     // handle mock
-    const mockCfgs = liteCfg ? liteCfg.mock : undefined;
+    let mockCfgs = liteCfg ? liteCfg.mock : undefined;
     let mockFiles = [];
     let rest;
+    if(!_.isArray(mockCfgs)) {
+        mockCfgs = [mockCfgs]
+    }
     _.forEach(mockCfgs, function(mockCfg) {
         if (mockCfg && mockCfg.enabled !== false) {
             const mockctx  = mockCfg.ctx || "/mock";
