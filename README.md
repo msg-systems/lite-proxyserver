@@ -35,7 +35,7 @@ We use [connect-rest](https://github.com/imrefazekas/connect-rest) for the local
 A simple redirect middleware is handwritten. A proxyPassReverse functionality is provided for response headers handwritten and for html body content rewriting we are using [tamper](https://github.com/fgnass/tamper).
 
 The following image should visualize the local [lite-proxyserver](https://github.com/msg-systems/lite-proxyserver) including all middlewares used.
-![architecture execution view](https://github.com/msg-systems/lite-proxyserver/raw/master/doc/execution view.png)
+![architecture execution view](https://github.com/msg-systems/lite-proxyserver/raw/master/doc/execution%20view.png)
 
 As you should have noticed by now this module strongly depends on [grunt](https://github.com/gruntjs/grunt). The server integrates well in a grunt build process.
 
