@@ -32,7 +32,7 @@ to use server middlewares as easy as possible.
 
 So based on the first dependency all further middlewares are [connect](https://github.com/gruntjs/grunt-contrib-connect) based.
 We use [connect-rest](https://github.com/imrefazekas/connect-rest) for the local REST service implementation and [connect-proxy](https://github.com/drewzboto/grunt-connect-proxy).
-A simple redirect middleware is handwritten. A proxyPassReverse functionality is provided for response headers handwritten and for html body content using [tamper](https://github.com/fgnass/tamper) 
+A simple redirect middleware is handwritten. A proxyPassReverse functionality is provided for response headers handwritten and for html body content rewriting we are using [tamper](https://github.com/fgnass/tamper).
 
 The following image should visualize the local [lite-proxyserver](https://github.com/msg-systems/lite-proxyserver) including all middlewares used.
 ![architecture execution view](https://github.com/msg-systems/lite-proxyserver/raw/master/doc/execution view.png)
@@ -65,11 +65,17 @@ The entries in the package.json will be validated with [duckyjs](https://github.
 
 ```
 {
-    mock?:      {
-        enabled?:               boolean,
-        ctx?:                   string,
-        file:                   string
-    },
+    mock?:      ([{
+            enabled?:           boolean,
+            ctx?:               string,
+            fallback?:          string,
+            file:               string
+        }*] | {
+            enabled?:           boolean,
+            ctx?:               string,
+            fallback?:          string,
+            file:               string
+        }),
     proxy?:      {
         enabled?:               boolean,
         targetHosts:    {
@@ -94,8 +100,10 @@ Since most of them have defaults or some are not self explaining see the followi
 
 | configuration entry | default | explanation |
 | ------------------- | ------- | ----------- |
+| mock | - | can be either one configuration object or be an array of those objects |
 | mock.enabled | true | mock implementation is generally activated by defining a mock.file; this switch exists to disable the mocking without deleting the rest of the configuration |
 | mock.ctx | '/mock' | the context for local REST services; mocked services must use a unique context beside the proxied services because this way the middlewares can seperate mock requests from proxy requests |
+| mock.fallback | - | in case that a combination of mock and proxy are used it is often important to not proxy all request. Often you want to proxy some of the services and use mocks for the rest. The fallback redirects not proxied requests by redirecting them to the specific mock definition |
 | mock.file | - | the mock file is a string pointing to the mock implementation. That implementation should require the [connect-rest](https://github.com/imrefazekas/connect-rest) middleware and export it as 'rest'; An example can be found in [uica-skeleton](https://github.com/msg-systems/uica-skeleton) |
 | proxy.enabled | true | proxy functionality is generally activated; this switch exists to disable the proxy without deleting the rest of the configuration |
 | proxy.targetHosts | - | in order to switch proxy targets fast you can define all your possible targets in this place. The @ enables you to give each target a specific name that can be used as a reference at proxy.target |

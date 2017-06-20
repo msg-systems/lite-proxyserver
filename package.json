@@ -2,7 +2,7 @@
     "name":        "lite-proxyserver",
     "homepage":    "https://github.com/msg-systems/lite-proxyserver",
     "description": "Lightweight development only node server for serving a web app, providing mockdata endpoints and proxy functionality toward real backends",
-    "version":     "0.3.2",
+    "version":     "0.4.0",
     "license":     "MIT",
     "author": {
         "name":    "Jochen Hoertreiter",
