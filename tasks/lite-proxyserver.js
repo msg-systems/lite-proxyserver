@@ -53,20 +53,20 @@ module.exports = function (grunt) {
     }
 
     // handle mock
-    let mockCfgs = liteCfg ? liteCfg.mock : undefined;
+    let mockCfgs  = liteCfg ? liteCfg.mock : undefined;
     let mockFiles = [];
     let rest;
-    if(!_.isArray(mockCfgs)) {
+    if (!_.isArray(mockCfgs)) {
         mockCfgs = [mockCfgs]
     }
-    _.forEach(mockCfgs, function(mockCfg) {
+    _.forEach(mockCfgs, function (mockCfg) {
         if (mockCfg && mockCfg.enabled !== false) {
             const mockctx  = mockCfg.ctx || "/mock";
             const mockFile = path.join(process.cwd(), mockCfg.file)
             mockFiles.push(mockFile)
             try {
                 rest = require(mockFile)(mockctx)
-                rests.push({rest: rest, ctx: mockctx, file: mockFile, fallback: mockCfg.fallback});
+                rests.push({ rest: rest, ctx: mockctx, file: mockFile, fallback: mockCfg.fallback });
             } catch (e) {
                 grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
             }
@@ -75,7 +75,38 @@ module.exports = function (grunt) {
     })
 
     // handle proxy
-    const proxyCfg = liteCfg ? liteCfg.proxy : undefined;
+    const proxyCfg = {}
+    let optionCfg  = {}
+    if (typeof grunt.option("proxy.enabled") !== "undefined") {
+        optionCfg.enabled = grunt.option("proxy.enabled") === "true"
+    }
+    if (typeof grunt.option("proxy.target") !== "undefined") {
+        optionCfg.target = grunt.option("proxy.target")
+    }
+    if (typeof grunt.option("proxy.port") !== "undefined") {
+        optionCfg.port = +grunt.option("proxy.port")
+        if (isNaN(optionCfg.port)) {
+            grunt.fatal(modulename + " configuration failures: \ngiven grunt option 'proxy.port' is not a number -> '" + grunt.option("proxy.port") + "'")
+        }
+    }
+    if (typeof grunt.option("proxy.host") !== "undefined") {
+        optionCfg.host = grunt.option("proxy.host")
+    }
+    if (typeof grunt.option("proxy.https") !== "undefined") {
+        optionCfg.https = grunt.option("proxy.https") === "true"
+    }
+    if (typeof grunt.option("proxy.base") !== "undefined") {
+        optionCfg.base = grunt.option("proxy.base")
+    }
+    if (typeof grunt.option("proxy.redirectRootToApp") !== "undefined") {
+        optionCfg.redirectRootToApp = grunt.option("proxy.redirectRootToApp")
+    }
+    if (typeof grunt.option("proxy.proxyPassReverse") !== "undefined") {
+        optionCfg.proxyPassReverse = grunt.option("proxy.proxyPassReverse") === "true"
+    }
+
+    Object.assign(proxyCfg, liteCfg.proxy, optionCfg);
+
     if (proxyCfg && proxyCfg.enabled !== false) {
         const proxyMiddleware = require('grunt-connect-proxy/lib/utils').proxyRequest;
         const tamper          = require('tamper');
@@ -88,9 +119,9 @@ module.exports = function (grunt) {
         const proxies = [];
         if (_.isArray(proxyCfg.proxies)) {
             _.forEach(proxyCfg.proxies, function (each) {
-                const proxyEntry  = _.cloneDeep(each);
-                proxyEntry.host = proxyTarget.host;
-                proxyEntry.port = proxyTarget.port;
+                const proxyEntry = _.cloneDeep(each);
+                proxyEntry.host  = proxyTarget.host;
+                proxyEntry.port  = proxyTarget.port;
                 if (each.hasOwnProperty("hostRewrite")) {
                     if (each.hostRewrite) {
                         if (!proxyEntry.headers)
@@ -105,18 +136,18 @@ module.exports = function (grunt) {
         }
 
         grunt.extendConfig({
-            exec: {
+            exec:    {
                 httpServer: {
-                    cmd: function() {
+                    cmd:     function () {
                         let watch = `./node_modules/nodemon/bin/nodemon --watch ${configfile}`
                         if (mockFiles && mockFiles.length) {
                             watch += _.chain(mockFiles)
-                                .map(function(mockFile) { return ` --watch ${path.dirname(mockFile)}` })
+                                .map(function (mockFile) { return ` --watch ${path.dirname(mockFile)}` })
                                 .uniq()
                                 .value()
                                 .join("")
                         }
-                        return `node ${watch} ./node_modules/grunt/bin/grunt configureProxies connect:httpServer`
+                        return `node ${watch} ./node_modules/grunt/bin/grunt configureProxies connect:httpServer ${grunt.option.flags().join(' ')}`
                     },
                     options: {
                         stdio: 'inherit'
@@ -180,7 +211,7 @@ module.exports = function (grunt) {
                             middlewares.push(connect.directory(options.base[0]));
                             middlewares.push(connect.bodyParser());
                             if (rests && rests.length) {
-                                _.forEach(rests, function(restObj) {
+                                _.forEach(rests, function (restObj) {
                                     middlewares.push(restObj.rest.rester());
                                     grunt.log.writeln("Mock created for: " + restObj.ctx + " to " + restObj.file);
                                     if (restObj.fallback) {
@@ -190,14 +221,14 @@ module.exports = function (grunt) {
                             }
                             middlewares.push(function mockFallbackHandler (req, res, next) {
                                 let fallbackRest = _.chain(rests)
-                                    .filter(function(rest) {
+                                    .filter(function (rest) {
                                         return rest.fallback && req.url.startsWith(rest.fallback) && !req.url.startsWith(rest.ctx)
                                     })
                                     .first()
                                     .value()
 
                                 if (fallbackRest) {
-                                    res.statusCode = 302;
+                                    res.statusCode       = 302;
                                     const redirectTarget = req.url.replace(fallbackRest.fallback, fallbackRest.ctx);
                                     res.setHeader("location", redirectTarget);
                                     grunt.log.writeln("Fallback mock handler: redirecting to " + redirectTarget)

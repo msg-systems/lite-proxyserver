@@ -60,6 +60,10 @@ module.exports = function (grunt) {
 ## Configuration
 
 The configuration of the lite-proxyserver and all its features is done within the package.json of your project.
+Alternatively a different configuration can be provided by setting the '--package.json' command line option.
+```
+grunt lite-proxyserver --package.json=packageTest.json
+```
 
 The entries in the package.json will be validated with [duckyjs](https://github.com/rse/ducky) using the following specification
 
@@ -98,23 +102,28 @@ The entries in the package.json will be validated with [duckyjs](https://github.
 
 Since most of them have defaults or some are not self explaining see the following explainations:
 
-| configuration entry | default | explanation |
-| ------------------- | ------- | ----------- |
-| mock | - | can be either one configuration object or be an array of those objects |
-| mock.enabled | true | mock implementation is generally activated by defining a mock.file; this switch exists to disable the mocking without deleting the rest of the configuration |
-| mock.ctx | '/mock' | the context for local REST services; mocked services must use a unique context beside the proxied services because this way the middlewares can seperate mock requests from proxy requests |
-| mock.fallback | - | in case that a combination of mock and proxy are used it is often important to not proxy all request. Often you want to proxy some of the services and use mocks for the rest. The fallback redirects not proxied requests by redirecting them to the specific mock definition |
-| mock.file | - | the mock file is a string pointing to the mock implementation. That implementation should require the [connect-rest](https://github.com/imrefazekas/connect-rest) middleware and export it as 'rest'; An example can be found in [uica-skeleton](https://github.com/msg-systems/uica-skeleton) |
-| proxy.enabled | true | proxy functionality is generally activated; this switch exists to disable the proxy without deleting the rest of the configuration |
-| proxy.targetHosts | - | in order to switch proxy targets fast you can define all your possible targets in this place. The @ enables you to give each target a specific name that can be used as a reference at proxy.target |
-| proxy.target | - | this chooses the concrete proxy target from the proxy.targetHosts list |
-| proxy.host | 'localhost' | this is the local node servers hostname. Your browser should be able to fetch your SPA from the defined proxy.host:proxy.port |
-| proxy.port | 2345 | this is the local node servers port. Your browser should be able to fetch your SPA from the defined proxy.host:proxy.port |
-| proxy.https | false | simple switch that determines the local node servers protocol. By default it uses http but it can be switched to https |
-| proxy.base | 'htdocs' | this is the document root directory for the static content your node server should deliver |
-| proxy.redirectRootToApp | - | This switch enables a simple middleware that handles incoming requests to '/' by redirecting to a specific context. this is useful if your app is deployed under a long context and you want to shortcut the browser URL. |
-| proxy.proxyPassReverse | true | This enables the proxy pass reverse functionality. It handles the rewriting of target proxy URLs in responses (headers and body) back to origin local URLs |
-| proxy.proxies | - | This defines a list of proxy URLs that should result in a proxy request. Basically this is a list of [connect-proxy](https://github.com/drewzboto/grunt-connect-proxy) configuration objects with one addition: the attribute 'hostRewrite' will result in a dynamic replacement of the proxy request header attribute 'host' set to the local node servers host and port. | 
+| configuration entry | command line option | default | explanation |
+| ------------------- | ------------------- | ------- | ----------- |
+| mock | - | - | can be either one configuration object or be an array of those objects |
+| mock.enabled | --mock.enabled | true | mock implementation is generally activated by defining a mock.file; this switch exists to disable the mocking without deleting the rest of the configuration |
+| mock.ctx | --mock.ctx | '/mock' | the context for local REST services; mocked services must use a unique context beside the proxied services because this way the middlewares can seperate mock requests from proxy requests |
+| mock.fallback | --mock.fallback | - | in case that a combination of mock and proxy are used it is often important to not proxy all request. Often you want to proxy some of the services and use mocks for the rest. The fallback redirects not proxied requests by redirecting them to the specific mock definition |
+| mock.file | --mock.file | - | the mock file is a string pointing to the mock implementation. That implementation should require the [connect-rest](https://github.com/imrefazekas/connect-rest) middleware and export it as 'rest'; An example can be found in [uica-skeleton](https://github.com/msg-systems/uica-skeleton) |
+| proxy.enabled | --proxy.enabled | true | proxy functionality is generally activated; this switch exists to disable the proxy without deleting the rest of the configuration |
+| proxy.targetHosts | - | - | in order to switch proxy targets fast you can define all your possible targets in this place. The @ enables you to give each target a specific name that can be used as a reference at proxy.target |
+| proxy.target | --proxy.target | - | this chooses the concrete proxy target from the proxy.targetHosts list |
+| proxy.host | --proxy.host | 'localhost' | this is the local node servers hostname. Your browser should be able to fetch your SPA from the defined proxy.host:proxy.port |
+| proxy.port | --proxy.port | 2345 | this is the local node servers port. Your browser should be able to fetch your SPA from the defined proxy.host:proxy.port |
+| proxy.https | --proxy.https | false | simple switch that determines the local node servers protocol. By default it uses http but it can be switched to https |
+| proxy.base | --proxy.base | 'htdocs' | this is the document root directory for the static content your node server should deliver |
+| proxy.redirectRootToApp | --proxy.redirectRootToApp | - | This switch enables a simple middleware that handles incoming requests to '/' by redirecting to a specific context. this is useful if your app is deployed under a long context and you want to shortcut the browser URL. |
+| proxy.proxyPassReverse | --proxy.proxyPassReverse | true | This enables the proxy pass reverse functionality. It handles the rewriting of target proxy URLs in responses (headers and body) back to origin local URLs |
+| proxy.proxies | - | - | This defines a list of proxy URLs that should result in a proxy request. Basically this is a list of [connect-proxy](https://github.com/drewzboto/grunt-connect-proxy) configuration objects with one addition: the attribute 'hostRewrite' will result in a dynamic replacement of the proxy request header attribute 'host' set to the local node servers host and port. | 
+
+Command line options overwrite any options from the package.json configuration. Example for providing command line options.
+```
+grunt lite-proxyserver --proxy.port=4711 --proxy.https=true   
+```
 
 An integration and configuration example of the [lite-proxyserver](https://github.com/msg-systems/lite-proxyserver) can be found in the [uica-skeleton](https://github.com/msg-systems/uica-skeleton).
 
