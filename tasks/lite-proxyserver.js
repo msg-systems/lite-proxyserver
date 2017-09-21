@@ -1,14 +1,14 @@
-"use strict"
+"use strict";
 const _     = require("lodash");
 const path  = require("path");
 const Ducky = require("ducky");
 
 module.exports = function (grunt) {
 
-    grunt.loadNpmTasks('grunt-contrib-connect')
-    grunt.loadNpmTasks('grunt-connect-proxy')
-    grunt.loadNpmTasks('grunt-exec')
-    grunt.loadNpmTasks('grunt-extend-config')
+    grunt.loadNpmTasks('grunt-contrib-connect');
+    grunt.loadNpmTasks('grunt-connect-proxy');
+    grunt.loadNpmTasks('grunt-exec');
+    grunt.loadNpmTasks('grunt-extend-config');
 
     const modulename = "[lite-proxyserver]";
     const configfile = grunt.option('package.json') || "package.json";
@@ -18,7 +18,7 @@ module.exports = function (grunt) {
     /* connect, server, proxy and watch specific actions and tasks */
     let rests = [];
 
-    let errors = []
+    let errors = [];
     if (!Ducky.validate(liteCfg, `{
                 mock?:      ([{
                     enabled?:               boolean,
@@ -62,21 +62,21 @@ module.exports = function (grunt) {
     _.forEach(mockCfgs, function (mockCfg) {
         if (mockCfg && mockCfg.enabled !== false) {
             const mockctx  = mockCfg.ctx || "/mock";
-            const mockFile = path.join(process.cwd(), mockCfg.file)
-            mockFiles.push(mockFile)
+            const mockFile = path.join(process.cwd(), mockCfg.file);
+            mockFiles.push(mockFile);
             try {
-                rest = require(mockFile)(mockctx)
+                rest = require(mockFile)(mockctx);
                 rests.push({ rest: rest, ctx: mockctx, file: mockFile, fallback: mockCfg.fallback });
             } catch (e) {
                 grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
             }
         }
         grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
-    })
+    });
 
     // handle proxy
-    const proxyCfg = {}
-    let optionCfg  = {}
+    const proxyCfg = {};
+    let optionCfg  = {};
     if (typeof grunt.option("proxy.enabled") !== "undefined") {
         optionCfg.enabled = grunt.option("proxy.enabled") === "true"
     }
@@ -84,7 +84,7 @@ module.exports = function (grunt) {
         optionCfg.target = grunt.option("proxy.target")
     }
     if (typeof grunt.option("proxy.port") !== "undefined") {
-        optionCfg.port = +grunt.option("proxy.port")
+        optionCfg.port = +grunt.option("proxy.port");
         if (isNaN(optionCfg.port)) {
             grunt.fatal(modulename + " configuration failures: \ngiven grunt option 'proxy.port' is not a number -> '" + grunt.option("proxy.port") + "'")
         }
@@ -112,6 +112,22 @@ module.exports = function (grunt) {
         const tamper          = require('tamper');
 
         const targetHosts = proxyCfg.targetHosts;
+        // overwrite targetHosts with command line option
+        const optionTargetHosts = {};
+        _.forEach(grunt.option.flags(), function (flag) {
+            const option = flag.split("=");
+            const key    = option[0].replace("--", "");
+            const value  = option.length === 2 ? option[1] : true;
+            if (key.startsWith('proxy.targetHosts.')) {
+                const targetHost = key.replace('proxy.targetHosts.', '');
+                const targetHostParts = targetHost.split(".");
+                if (targetHostParts.length === 2) {
+                    optionTargetHosts[targetHostParts[0]] = optionTargetHosts[targetHostParts[0]] || {};
+                    optionTargetHosts[targetHostParts[0]][targetHostParts[1]] = value
+                }
+            }
+        });
+        _.extend(targetHosts, optionTargetHosts);
         const proxyTarget = targetHosts[proxyCfg.target];
         const localPort   = proxyCfg.port || 2345;
         const localHost   = (proxyCfg.https ? "https" : "http") + "://" + (proxyCfg.host || "localhost") + ":" + localPort;
@@ -139,7 +155,7 @@ module.exports = function (grunt) {
             exec:    {
                 httpServer: {
                     cmd:     function () {
-                        let watch = `./node_modules/nodemon/bin/nodemon --watch ${configfile}`
+                        let watch = `./node_modules/nodemon/bin/nodemon --watch ${configfile}`;
                         if (mockFiles && mockFiles.length) {
                             watch += _.chain(mockFiles)
                                 .map(function (mockFile) { return ` --watch ${path.dirname(mockFile)}` })
@@ -225,13 +241,13 @@ module.exports = function (grunt) {
                                         return rest.fallback && req.url.startsWith(rest.fallback) && !req.url.startsWith(rest.ctx)
                                     })
                                     .first()
-                                    .value()
+                                    .value();
 
                                 if (fallbackRest) {
                                     res.statusCode       = 302;
                                     const redirectTarget = req.url.replace(fallbackRest.fallback, fallbackRest.ctx);
                                     res.setHeader("location", redirectTarget);
-                                    grunt.log.writeln("Fallback mock handler: redirecting to " + redirectTarget)
+                                    grunt.log.writeln("Fallback mock handler: redirecting to " + redirectTarget);
                                     res.end()
                                 } else {
                                     next()
@@ -253,4 +269,4 @@ module.exports = function (grunt) {
 
     grunt.registerTask("lite-proxyserver", ["configureProxies", "exec:httpServer"]);
 
-}
+};

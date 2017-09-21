@@ -2,7 +2,7 @@
     "name":        "lite-proxyserver",
     "homepage":    "https://github.com/msg-systems/lite-proxyserver",
     "description": "Lightweight development only node server for serving a web app, providing mockdata endpoints and proxy functionality toward real backends",
-    "version":     "0.5.0",
+    "version":     "0.5.1",
     "license":     "MIT",
     "author": {
         "name":    "Jochen Hoertreiter",
@@ -48,7 +48,7 @@
     },
     "scripts": {
         "upd":         "upd -n",
-        "start":       "grunt lite-proxyserver --package.json=packageTest.json"
+        "start":       "grunt lite-proxyserver --package.json=packageTest.json --proxy.targetHosts.DAN.host=Foo --proxy.targetHosts.DAN.port=4711 --proxy.target=DAN"
     }
 
 }
