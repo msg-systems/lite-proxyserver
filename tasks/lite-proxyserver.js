@@ -136,14 +136,14 @@ module.exports = function (grunt) {
         if (_.isArray(proxyCfg.proxies)) {
             _.forEach(proxyCfg.proxies, function (each) {
                 const proxyEntry = _.cloneDeep(each);
-                proxyEntry.host  = proxyTarget.host;
-                proxyEntry.port  = proxyTarget.port;
+                proxyEntry.host  = each.host || proxyTarget.host;
+                proxyEntry.port  = each.port || proxyTarget.port;
                 if (each.hasOwnProperty("hostRewrite")) {
                     if (each.hostRewrite) {
                         if (!proxyEntry.headers)
                             proxyEntry.headers = {};
                         if (_.isObject(proxyEntry.headers))
-                            proxyEntry.headers.host = proxyTarget.host + ":" + proxyTarget.port
+                            proxyEntry.headers.host = (each.host || proxyTarget.host) + ":" + (each.port || proxyTarget.port)
                     }
                     delete proxyEntry.hostRewrite
                 }
