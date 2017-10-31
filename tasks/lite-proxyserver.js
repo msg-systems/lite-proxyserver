@@ -158,7 +158,7 @@ module.exports = function (grunt) {
                         let watch = `./node_modules/nodemon/bin/nodemon --watch ${configfile}`;
                         if (mockFiles && mockFiles.length) {
                             watch += _.chain(mockFiles)
-                                .map(function (mockFile) { return ` --watch ${path.dirname(mockFile)}` })
+                                .map(function (mockFile) { return ` --watch "${path.dirname(mockFile)}"` })
                                 .uniq()
                                 .value()
                                 .join("")
