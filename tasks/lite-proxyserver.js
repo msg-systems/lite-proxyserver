@@ -68,7 +68,7 @@ module.exports = function (grunt) {
                 rest = require(mockFile)(mockctx);
                 rests.push({ rest: rest, ctx: mockctx, file: mockFile, fallback: mockCfg.fallback });
             } catch (e) {
-                grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem (" + e.message + ")")
+                grunt.fatal(modulename + " mock - handling lite-proxyserver.mock.file encounters a problem: " + e.stack)
             }
         }
         grunt.verbose.writeln(modulename + " mock " + (rest ? "enabled" : "disabled"));
