@@ -45,6 +45,7 @@ module.exports = function (grunt) {
                     https?:                 boolean,
                     base?:                  string,
                     redirectRootToApp?:     string,
+                    cors?:                  boolean,
                     proxyPassReverse?:      boolean,
                     proxies?:               [object*]
                 }
@@ -78,7 +79,7 @@ module.exports = function (grunt) {
     const proxyCfg = {};
     let optionCfg  = {};
     if (typeof grunt.option("proxy.enabled") !== "undefined") {
-        optionCfg.enabled = grunt.option("proxy.enabled") === "true"
+        optionCfg.enabled = typeof grunt.option("proxy.enabled") === "boolean" ? grunt.option("proxy.enabled") : grunt.option("proxy.enabled") === "true"
     }
     if (typeof grunt.option("proxy.target") !== "undefined") {
         optionCfg.target = grunt.option("proxy.target")
@@ -93,7 +94,7 @@ module.exports = function (grunt) {
         optionCfg.host = grunt.option("proxy.host")
     }
     if (typeof grunt.option("proxy.https") !== "undefined") {
-        optionCfg.https = grunt.option("proxy.https") === "true"
+        optionCfg.https = typeof grunt.option("proxy.https") === "boolean" ? grunt.option("proxy.https") : grunt.option("proxy.https") === "true"
     }
     if (typeof grunt.option("proxy.base") !== "undefined") {
         optionCfg.base = grunt.option("proxy.base")
@@ -102,15 +103,15 @@ module.exports = function (grunt) {
         optionCfg.redirectRootToApp = grunt.option("proxy.redirectRootToApp")
     }
     if (typeof grunt.option("proxy.proxyPassReverse") !== "undefined") {
-        optionCfg.proxyPassReverse = grunt.option("proxy.proxyPassReverse") === "true"
+        optionCfg.proxyPassReverse = typeof grunt.option("proxy.proxyPassReverse") === "boolean" ? grunt.option("proxy.proxyPassReverse") : grunt.option("proxy.proxyPassReverse") === "true"
+    }
+    if (typeof grunt.option("proxy.cors") !== "undefined") {
+        optionCfg.cors = typeof grunt.option("proxy.cors") === "boolean" ? grunt.option("proxy.cors") : grunt.option("proxy.cors") === "true"
     }
 
     Object.assign(proxyCfg, liteCfg.proxy, optionCfg);
 
     if (proxyCfg && proxyCfg.enabled !== false) {
-        const proxyMiddleware = require('grunt-connect-proxy/lib/utils').proxyRequest;
-        const tamper          = require('tamper');
-
         const targetHosts = proxyCfg.targetHosts;
         // overwrite targetHosts with command line option
         const optionTargetHosts = {};
@@ -194,6 +195,10 @@ module.exports = function (grunt) {
                                     }
                                 })
                             }
+                            if (proxyCfg.cors) {
+                                grunt.log.writeln("CORS middleware activated");
+                                middlewares.push(require('cors')())
+                            }
                             if (!_.isEmpty(proxies)) {
                                 if (proxyCfg.proxyPassReverse !== false) {
                                     middlewares.push(function proxyPassReverse (req, res, next) {
@@ -210,7 +215,7 @@ module.exports = function (grunt) {
                                         };
                                         next();
                                     });
-                                    middlewares.push(tamper(function (req, res) {
+                                    middlewares.push(require('tamper')(function (req, res) {
                                         if (proxyCfg.proxyPassReverse === false ||
                                             (res.getHeader('Content-Type') && typeof res.getHeader('Content-Type') === "string" &&
                                             res.getHeader('Content-Type').indexOf('text/html') === -1)) {
@@ -221,7 +226,7 @@ module.exports = function (grunt) {
                                         }
                                     }));
                                 }
-                                middlewares.push(proxyMiddleware);
+                                middlewares.push(require('grunt-connect-proxy/lib/utils').proxyRequest);
                             }
                             middlewares.push(connect.static(options.base[0], { maxAge: 0, redirect: true }));
                             middlewares.push(connect.directory(options.base[0]));

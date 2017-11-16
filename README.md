@@ -94,6 +94,7 @@ The entries in the package.json will be validated with [duckyjs](https://github.
         https?:                 boolean,
         base?:                  string,
         redirectRootToApp?:     string,
+        cors?:                  boolean,
         proxyPassReverse?:      boolean,
         proxies?:               [object*]
     }
@@ -116,9 +117,10 @@ Since most of them have defaults or some are not self explaining see the followi
 | proxy.port | --proxy.port | 2345 | this is the local node servers port. Your browser should be able to fetch your SPA from the defined proxy.host:proxy.port |
 | proxy.https | --proxy.https | false | simple switch that determines the local node servers protocol. By default it uses http but it can be switched to https |
 | proxy.base | --proxy.base | 'htdocs' | this is the document root directory for the static content your node server should deliver |
-| proxy.redirectRootToApp | --proxy.redirectRootToApp | - | This switch enables a simple middleware that handles incoming requests to '/' by redirecting to a specific context. this is useful if your app is deployed under a long context and you want to shortcut the browser URL. |
-| proxy.proxyPassReverse | --proxy.proxyPassReverse | true | This enables the proxy pass reverse functionality. It handles the rewriting of target proxy URLs in responses (headers and body) back to origin local URLs |
-| proxy.proxies | - | - | This defines a list of proxy URLs that should result in a proxy request. Basically this is a list of [connect-proxy](https://github.com/drewzboto/grunt-connect-proxy) configuration objects with one addition: the attribute 'hostRewrite' will result in a dynamic replacement of the proxy request header attribute 'host' set to the local node servers host and port. | 
+| proxy.redirectRootToApp | --proxy.redirectRootToApp | - | this switch enables a simple middleware that handles incoming requests to '/' by redirecting to a specific context. this is useful if your app is deployed under a long context and you want to shortcut the browser URL. |
+| proxy.cors | --proxy.cors | false | activates the CORS middleware that adds 'Access-Control-Allow-Origin: *' response headers to all responses |
+| proxy.proxyPassReverse | --proxy.proxyPassReverse | true | this enables the proxy pass reverse functionality. It handles the rewriting of target proxy URLs in responses (headers and body) back to origin local URLs |
+| proxy.proxies | - | - | this defines a list of proxy URLs that should result in a proxy request. Basically this is a list of [connect-proxy](https://github.com/drewzboto/grunt-connect-proxy) configuration objects with one addition: the attribute 'hostRewrite' will result in a dynamic replacement of the proxy request header attribute 'host' set to the local node servers host and port. |
 
 Command line options overwrite any options from the package.json configuration. Example for providing command line options.
 ```
